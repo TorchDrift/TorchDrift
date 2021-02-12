@@ -3,18 +3,19 @@ import tqdm
 
 
 class DriftDetectionExperiment:
-    def __init__(self, drift_detector, ood_ratio=1.0, sample_size=1):
+    def __init__(self, drift_detector, feature_extractor, ood_ratio=1.0, sample_size=1):
         self.ood_ratio = ood_ratio
         self.sample_size = sample_size
         self.drift_detector = drift_detector
+        self.feature_extractor = feature_extractor
 
     # def extra_loss(self, ...):  add components to loss from training the detector
     def post_training(self, train_dataloader):
         "Called after training the main model"
-        self.drift_detector.fit(train_dataloader)
+        self.drift_detector.fit(train_dataloader, self.feature_extractor)
 
     def evaluate(self, ind_datamodule, ood_datamodule, num_runs=50):
-        device = next(self.drift_detector.model.parameters()).device
+        device = next(self.feature_extractor.parameters()).device
         # numbers for drifted scenarios
         num_ood = int(self.sample_size * self.ood_ratio)
         num_ind = self.sample_size - num_ood
@@ -31,12 +32,16 @@ class DriftDetectionExperiment:
         for r, (ind_batch, ood_batch) in tqdm.tqdm(
             enumerate(zip(ind_dl, ood_dl)), total=num_runs
         ):
-            ind_score = self.drift_detector.predict_shift(ind_batch[0].to(device))
+            with torch.no_grad():
+                ind_feat = self.feature_extractor(ind_batch[0].to(device))
+                ind_score = self.drift_detector(ind_feat)
             if num_ind > 0:
                 drifted_batch = torch.cat([ind_batch[0][:num_ind], ood_batch[0]], dim=0)
             else:
                 drifted_batch = ood_batch[0]
-            drifted_score = self.drift_detector.predict_shift(drifted_batch.to(device))
+            with torch.no_grad():
+                drifted_feat = self.feature_extractor(drifted_batch.to(device))
+                drifted_score = self.drift_detector(drifted_feat)
             all_ind_scores.append(ind_score)
             all_drifted_scores.append(drifted_score)
 

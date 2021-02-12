@@ -1,8 +1,8 @@
 from typing import Optional
 
 import torch
-import tqdm
 
+from . import DriftDetector
 
 def kernel_mmd(x, y, n_perm=1000):
     # compare kernel MMD paper and code:
@@ -51,40 +51,11 @@ def kernel_mmd(x, y, n_perm=1000):
     return mmd, p_val
 
 
-class KernelMMDDriftDetector:
-    def __init__(self, model: torch.nn.Module):
-        self.model = model
-        self.base_outputs = None
-        self.model.eval()  # careful about test time dropout
-
-    def fit(
-        self,
-        ref_ds: torch.utils.data.Dataset,
-        batch_size: int = 32,
-        num_batches: Optional[int] = None,
-    ):
-        device = next(self.model.parameters()).device
-        all_outputs = []
-        dl = torch.utils.data.DataLoader(ref_ds, batch_size=batch_size, shuffle=True)
-        nb = len(dl)
-        if num_batches is not None:
-            nb = min(nb, num_batches)
-        for i, (b, _) in tqdm.tqdm(zip(range(nb), dl), total=nb):
-            # predict puts model in eval, does no_grad
-            o = self.model.predict(b.to(device))
-            all_outputs.append(o)
-        all_outputs = torch.cat(all_outputs, dim=0)
-        self.base_outputs = all_outputs
-
-    def predict_shift(
-        self, input_batch: torch.Tensor, individual_samples: bool = False
-    ):
-        assert self.base_outputs is not None, "Please call fit before predict_shift"
+class KernelMMDDriftDetector(DriftDetector):
+    def predict_shift_from_features(self, base_outputs: torch.Tensor, outputs: torch.Tensor, individual_samples: bool = False):
         assert (
             not individual_samples
         ), "Individual samples not supported by MMD detector"
-        outputs = self.model.predict(input_batch)
-        self.last_outputs = outputs
         ood_score = kernel_mmd(
             outputs, self.base_outputs, n_perm=None
         )  # we have higher == more abnormal
