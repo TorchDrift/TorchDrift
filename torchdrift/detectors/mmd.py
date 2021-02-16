@@ -52,11 +52,21 @@ def kernel_mmd(x, y, n_perm=1000):
 
 
 class KernelMMDDriftDetector(DriftDetector):
-    def predict_shift_from_features(self, base_outputs: torch.Tensor, outputs: torch.Tensor, individual_samples: bool = False):
+    def __init__(self, *, return_p_value=False, n_perm: int = 1000):
+        super().__init__(return_p_value=return_p_value)
+        self.n_perm = n_perm
+
+    def predict_shift_from_features(self, base_outputs: torch.Tensor, outputs: torch.Tensor, compute_score: bool, compute_p_value: bool, individual_samples: bool = False):
         assert (
             not individual_samples
         ), "Individual samples not supported by MMD detector"
-        ood_score = kernel_mmd(
-            outputs, self.base_outputs, n_perm=None
-        )  # we have higher == more abnormal
-        return ood_score
+        if not compute_p_value:
+            ood_score = kernel_mmd(
+                outputs, base_outputs, n_perm=None
+            )
+            p_value = None
+        else:
+            ood_score, p_value = kernel_mmd(
+                outputs, base_outputs, n_perm=self.n_perm
+            )
+        return ood_score, p_value
