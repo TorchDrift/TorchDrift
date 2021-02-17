@@ -1,3 +1,3 @@
-from . import data, detectors, utils
+from . import data, detectors, utils, reducers
 
 # Todo. :)
