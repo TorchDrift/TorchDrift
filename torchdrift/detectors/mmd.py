@@ -5,11 +5,19 @@ import torch
 from . import DriftDetector
 
 def kernel_mmd(x, y, n_perm=1000):
-    # compare kernel MMD paper and code:
-    # A. Gretton et al.: A kernel two-sample test, JMLR 13 (2012)
-    # http://www.gatsby.ucl.ac.uk/~gretton/mmd/mmd.htm
-    # x shape [n, d] y shape [m, d]
-    # n_perm number of bootstrap permutations to get p-value, pass none to not get p-value
+    """Implements the kernel MMD two-sample test.
+
+    It is modelled after the kernel MMD paper and code:
+    A. Gretton et al.: A kernel two-sample test, JMLR 13 (2012)
+    http://www.gatsby.ucl.ac.uk/~gretton/mmd/mmd.htm
+    
+    The arguments `x` and `y` should be two-dimensional tensors.
+    The first is the batch dimension (which may differ), the second
+    the features (which must be the same on both `x` and `y`).
+
+    `n_perm` is number of bootstrap permutations to get p-value, pass `None` to not get p-value.
+    """
+
     n, d = x.shape
     m, d2 = y.shape
     assert d == d2
@@ -52,6 +60,14 @@ def kernel_mmd(x, y, n_perm=1000):
 
 
 class KernelMMDDriftDetector(DriftDetector):
+    """Drift detector based on the kernel Maximum Mean Discrepancy (MMD) test.
+
+This is modelled after the MMD drift detection in
+S. Rabanser et al: *Failing Loudly: An Empirical Study of Methods for Detecting Dataset Shift* (NeurIPS), 2019.
+
+Note that our heuristic choice of the kernel bandwith is more closely aligned with that of the original MMD paper and code than S. Rabanser's.
+    """
+    
     def __init__(self, *, return_p_value=False, n_perm: int = 1000):
         super().__init__(return_p_value=return_p_value)
         self.n_perm = n_perm
