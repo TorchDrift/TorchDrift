@@ -36,7 +36,9 @@ feature extractor, otherwise the functions try to infer the device from the `fea
     nb = len(dl)
     if num_batches is not None:
         nb = min(nb, num_batches)
-    for i, (b, _) in tqdm.tqdm(zip(range(nb), dl), total=nb):
+    for i, b in tqdm.tqdm(zip(range(nb), dl), total=nb):
+        if not isinstance(b, torch.Tensor):
+            b = b[0]
         with torch.no_grad():
             all_outputs.append(feature_extractor(b.to(device)))
     all_outputs = torch.cat(all_outputs, dim=0)

@@ -62,7 +62,7 @@ def interpolate_severity(img, cifar, imagenet, severity):
 def gaussian_noise(x: Tensor, severity: int = 1) -> Tensor:
     """Applys gaussian noise."""
     cifar_std = [0.04, 0.06, 0.08, 0.09, 0.10]
-    imagent_std = [0.08, 0.12, 0.18, 0.26, 0.38]
+    imagenet_std = [0.08, 0.12, 0.18, 0.26, 0.38]
     std = interpolate_severity(x, cifar_std, imagenet_std, severity)
     return (x + torch.randn_like(x) * std).clamp(min=0.0, max=1.0)
 

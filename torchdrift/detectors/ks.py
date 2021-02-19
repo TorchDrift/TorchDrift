@@ -8,7 +8,7 @@ from . import Detector
 try:
     import numba
     njit = numba.jit(nopython=True, fastmath=True)
-except ImportError:
+except ImportError: # pragma: no cover
     njit = lambda x: x
 
 
