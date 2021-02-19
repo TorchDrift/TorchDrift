@@ -1,6 +1,6 @@
 import torch
 import tqdm
-
+from .fit import fit
 
 class DriftDetectionExperiment:
     """An experimental setup to explore the ROC of drift detection setups
@@ -23,7 +23,7 @@ The datamodules are expected to provide a `default_dataloader` method taking
     # def extra_loss(self, ...):  add components to loss from training the detector
     def post_training(self, train_dataloader):
         "Called after training the main model, fits the drift detector."
-        self.drift_detector.fit(train_dataloader, self.feature_extractor)
+        fit(train_dataloader, self.feature_extractor, self.drift_detector)
 
     def evaluate(self, ind_datamodule, ood_datamodule, num_runs=50):
         """runs the experiment (`num_runs` inputs)

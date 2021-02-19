@@ -1,9 +1,6 @@
-from typing import Optional, Callable
-import tqdm
-
 import torch
 
-class DriftDetector(torch.nn.Module):
+class Detector(torch.nn.Module):
     """Detector class.
 
 The detector is is a `nn.Module` subclass that, after fitting, performs a drift test when called and returns a score or p-value.
@@ -16,28 +13,10 @@ The detector is is a `nn.Module` subclass that, after fitting, performs a drift 
         self.register_buffer('base_outputs', None)
         self.return_p_value = return_p_value
 
-    def fit(
-        self,
-        ref_ds: torch.utils.data.Dataset,
-        feature_extractor: torch.nn.Module,
-        batch_size: int = 32,
-        num_batches: Optional[int] = None,
-    ):
-        """Train drift detector on reference distribution.
-"""
-        
-        feature_extractor.eval()  # careful about test time dropout
-        device = next(feature_extractor.parameters()).device
-        all_outputs = []
-        dl = torch.utils.data.DataLoader(ref_ds, batch_size=batch_size, shuffle=True)
-        nb = len(dl)
-        if num_batches is not None:
-            nb = min(nb, num_batches)
-        for i, (b, _) in tqdm.tqdm(zip(range(nb), dl), total=nb):
-            with torch.no_grad():
-                all_outputs.append(feature_extractor(b.to(device)))
-        all_outputs = torch.cat(all_outputs, dim=0)
-        self.base_outputs = all_outputs
+    def fit(self, x: torch.Tensor):
+        """Record a sample as the reference distribution"""
+        self.base_outputs = x.detach()
+        return x
 
     def predict_shift_from_features(self, base_outputs: torch.Tensor, outputs: torch.Tensor, compute_score: bool, compute_p_value: bool, individual_samples: bool = False) -> torch.Tensor:
         """stub to be overridden by subclasses"""
@@ -65,3 +44,4 @@ This method calls `predict_shift_from_features` under the hood, so you only need
         if self.return_p_value:
             return p_value
         return ood_score
+

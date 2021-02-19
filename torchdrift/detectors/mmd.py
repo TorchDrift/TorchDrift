@@ -2,7 +2,7 @@ from typing import Optional
 
 import torch
 
-from . import DriftDetector
+from . import Detector
 
 def kernel_mmd(x, y, n_perm=1000):
     """Implements the kernel MMD two-sample test.
@@ -59,7 +59,7 @@ def kernel_mmd(x, y, n_perm=1000):
     return mmd, p_val
 
 
-class KernelMMDDriftDetector(DriftDetector):
+class KernelMMDDriftDetector(Detector):
     """Drift detector based on the kernel Maximum Mean Discrepancy (MMD) test.
 
 This is modelled after the MMD drift detection in

@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 import numpy
 
-from . import DriftDetector
+from . import Detector
 
 try:
     import numba
@@ -64,7 +64,7 @@ def ks_two_sample_multi_dim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     ks_scores = sign.cumsum(0).abs().max(0).values
     return ks_scores
 
-class KSDriftDetector(DriftDetector):
+class KSDriftDetector(Detector):
     """Drift detector based on (multiple) Kolmogorov-Smirnov tests.
 
 This detector uses the Kolmogorov-Smirnov test on the marginals of the features
