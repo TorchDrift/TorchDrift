@@ -10,10 +10,20 @@ def fit(
         dl: torch.utils.data.DataLoader,
         feature_extractor: torch.nn.Module,
         reducers_detectors: Union[Reducer, Detector, List[Union[Reducer, Detector]]],
+        *,
         num_batches: Optional[int] = None,
         device: Union[torch.device, str, None] = None
     ):
     """Train drift detector on reference distribution.
+
+The dataloader `dl` should provide the reference distribution. Optionally you can limit the number of batches sampled from the dataloader with `num_batches`.
+
+The `feature extractor` can be any module be anything that does not need to be fit.
+
+The reducers and detectors should be passed (in the order they should be applied, one takes the output from the previous) as a list. A single detector or reducer can also be passed.
+
+If you provide a `device`, data is moved there before running through the
+feature extractor, otherwise the functions try to infer the device from the `feature_extractor`.
 """
     if not isinstance(reducers_detectors, typing.Iterable):
         reducers_detectors = [reducers_detectors]
