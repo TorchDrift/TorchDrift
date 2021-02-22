@@ -3,6 +3,7 @@ import torchdrift
 import torch
 import torch.utils.data
 
+
 class TensorDataModule:
     def __init__(self, *args):
         self.ds = torch.utils.data.TensorDataset(*args)
@@ -13,19 +14,27 @@ class TensorDataModule:
             batch_size = self.val_batch_size
         replacement = num_samples is not None
         if shuffle:
-            sampler = torch.utils.data.RandomSampler(dataset, replacement=replacement, num_samples=num_samples)
+            sampler = torch.utils.data.RandomSampler(
+                dataset, replacement=replacement, num_samples=num_samples
+            )
         else:
             sampler = None
-        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+        return torch.utils.data.DataLoader(
+            dataset, batch_size=batch_size, sampler=sampler
+        )
+
 
 def test_fit():
     dm_ref = TensorDataModule(torch.randn(500, 5))
     d = torchdrift.detectors.KernelMMDDriftDetector()
     torchdrift.utils.fit(
-        dm_ref.default_dataloader(batch_size=10), torch.nn.Identity(),
+        dm_ref.default_dataloader(batch_size=10),
+        torch.nn.Identity(),
         [torch.nn.Identity(), d],
         num_batches=3,
-        device='cpu')
+        device="cpu",
+    )
+
 
 def test_experiment():
     torch.manual_seed(1234)
@@ -34,7 +43,8 @@ def test_experiment():
     dm_x = TensorDataModule(torch.randn(500, 5))
     dm_y = TensorDataModule(torch.randn(500, 5) + 1)
     experiment = torchdrift.utils.DriftDetectionExperiment(
-        d, torch.nn.Linear(5, 5),
+        d,
+        torch.nn.Linear(5, 5),
     )
     experiment.post_training(torch.utils.data.DataLoader(dm_ref.ds, batch_size=100))
     experiment.evaluate(dm_x, dm_y)
@@ -43,6 +53,7 @@ def test_experiment():
     )
     experiment.post_training(torch.utils.data.DataLoader(dm_ref.ds, batch_size=100))
     experiment.evaluate(dm_x, dm_y)
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
