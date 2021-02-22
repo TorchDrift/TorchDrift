@@ -2,18 +2,19 @@ import torch
 import tqdm
 from .fit import fit
 
+
 class DriftDetectionExperiment:
     """An experimental setup to explore the ROC of drift detection setups
 
-This tests a setup based on a drift detector and a feature extractor (the latter including reducers).
+    This tests a setup based on a drift detector and a feature extractor (the latter including reducers).
 
-The detector is fitted with `post_training`.
+    The detector is fitted with `post_training`.
 
-Then given datamodules for in-distribution and out-of-distribution, non-drifted and drifted batches are constructed. The test batches have the `sample_size` given as a constructor parameter and a fraction `ood_ratio` samples (rounded up) are from the out-of-distribution datamodule.
+    Then given datamodules for in-distribution and out-of-distribution, non-drifted and drifted batches are constructed. The test batches have the `sample_size` given as a constructor parameter and a fraction `ood_ratio` samples (rounded up) are from the out-of-distribution datamodule.
 
-The datamodules are expected to provide a `default_dataloader` method taking
-`batch_size` and `num_samples` arguments (see the examples for details).
-"""
+    The datamodules are expected to provide a `default_dataloader` method taking
+    `batch_size` and `num_samples` arguments (see the examples for details)."""
+
     def __init__(self, drift_detector, feature_extractor, ood_ratio=1.0, sample_size=1):
         self.ood_ratio = ood_ratio
         self.sample_size = sample_size
