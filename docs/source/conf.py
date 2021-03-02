@@ -28,6 +28,7 @@ author = 'MathInf GmbH and Orobix Srl'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
+              'nbsphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -65,3 +66,12 @@ def setup(app):
     app.connect('autodoc-skip-member', autodoc_skip_member)
 
 autodoc_inherit_docstrings = False
+
+nbsphinx_requirejs_path = ''
+nbsphinx_execute = 'never'
+
+nbsphinx_epilog = """
+View this document as a notebook: https://github.com/torchdrift/torchdrift/blob/master/{{ env.doc2path(env.docname, base=None) }}
+
+----
+"""

@@ -6,12 +6,21 @@ from . import Detector
 
 
 class Kernel:
+    """Base class for kernels
+
+Unless otherwise noted, all kernels implementing lengthscale detection
+use the median of the first 100 pairwise distances as the lengthscale."""
     pass
 
 
 class GaussianKernel(Kernel):
-    """Unnormalized gaussian kernel"""
+    r"""Unnormalized gaussian kernel
 
+.. math::
+    k(|x-y|) = \exp(-|x-y|^2/(2\ell^2))
+
+where :math:`\ell` is the `lengthscale` (autodetected or given).
+"""
     def __init__(self, lengthscale=None):
         super().__init__()
         self.lengthscale = lengthscale
@@ -22,11 +31,17 @@ class GaussianKernel(Kernel):
             lengthscale = self.lengthscale
         else:
             lengthscale = dists[:100, :100].median()
-        return torch.exp((-1 / lengthscale ** 2) * dists ** 2)
+        return torch.exp((-0.5 / lengthscale ** 2) * dists ** 2)
 
 
 class ExpKernel(Kernel):
-    """Unnormalized exponential kernel"""
+    r"""Unnormalized exponential kernel
+
+.. math::
+    k(|x-y|) = \exp(-|x-y|/\ell)
+
+where :math:`\ell` is the `lengthscale` (autodetected or given).
+"""
 
     def __init__(self, lengthscale=None):
         super().__init__()
@@ -41,9 +56,13 @@ class ExpKernel(Kernel):
 
 
 class RationalQuadraticKernel(Kernel):
-    """Unnormalized rational quadratic kernel
+    r"""Unnormalized rational quadratic kernel
 
-    k(|x-y|) = (1+|x-y|^2/(2 alpha lengthscale**2))^(-alpha)"""
+.. math::
+    k(|x-y|) = (1+|x-y|^2/(2 \alpha \ell^2))^{-\alpha}
+
+where :math:`\ell` is the `lengthscale` (autodetected or given).
+"""
 
     def __init__(self, lengthscale=None, alpha=1.0):
         super().__init__()
@@ -123,6 +142,8 @@ class KernelMMDDriftDetector(Detector):
     S. Rabanser et al: *Failing Loudly: An Empirical Study of Methods for Detecting Dataset Shift* (NeurIPS), 2019.
 
     Note that our heuristic choice of the kernel bandwith is more closely aligned with that of the original MMD paper and code than S. Rabanser's.
+
+    The default kernel is the unnormalized Gaussian (or Squared Exponential) kernel.
     """
 
     def __init__(
