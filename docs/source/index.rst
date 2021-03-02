@@ -16,6 +16,7 @@ TorchDrift is a PyTorch package for monitoring models and detecting drift.
    :caption: Examples:
 
    notebooks/drift_detection_on_images
+   notebooks/deployment_monitoring_example
 
 .. toctree::
    :maxdepth: 2
