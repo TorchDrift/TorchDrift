@@ -9,7 +9,7 @@ class Kernel:
     """Base class for kernels
 
 Unless otherwise noted, all kernels implementing lengthscale detection
-use the median of the first 100 pairwise distances as the lengthscale."""
+use the median of pairwise distances as the lengthscale."""
     pass
 
 
@@ -30,7 +30,7 @@ where :math:`\ell` is the `lengthscale` (autodetected or given).
         if self.lengthscale is not None:
             lengthscale = self.lengthscale
         else:
-            lengthscale = dists[:100, :100].median()
+            lengthscale = dists.median()
         return torch.exp((-0.5 / lengthscale ** 2) * dists ** 2)
 
 
@@ -51,7 +51,7 @@ where :math:`\ell` is the `lengthscale` (autodetected or given).
         if self.lengthscale is not None:
             lengthscale = self.lengthscale
         else:
-            lengthscale = dists[:100, :100].median()
+            lengthscale = dists.median()
         return torch.exp((-1 / lengthscale) * dists)
 
 
@@ -73,7 +73,7 @@ where :math:`\ell` is the `lengthscale` (autodetected or given).
         if self.lengthscale is not None:
             lengthscale = self.lengthscale
         else:
-            lengthscale = dists[:100, :100].median()
+            lengthscale = dists.median()
         return torch.pow(
             1 + (1 / (2 * self.alpha * lengthscale ** 2)) * dists ** 2, -self.alpha
         )
