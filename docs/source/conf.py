@@ -75,3 +75,14 @@ View this document as a notebook: https://github.com/torchdrift/torchdrift/blob/
 
 ----
 """
+
+nbsphinx_prolog = """
+.. raw:: html
+
+    <style>
+        .nbinput .prompt,
+        .nboutput .prompt {
+            display: none;
+        }
+    </style>
+"""
