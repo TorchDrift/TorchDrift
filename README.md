@@ -1,7 +1,8 @@
-# TorchDrift -- drift detection on PyTorch
+# TorchDrift: drift detection on PyTorch
 
-TorchDrift lets you monitor your PyTorch models to see if the data
-matches what it has been trained for. We focus on practical application
+TorchDrift is a data and concept drift library for PyTorch. It lets you monitor your PyTorch models to see if they operate within spec.
+
+We focus on practical application
 and strive to seamlessly integrate with PyTorch.
 
 # Installation

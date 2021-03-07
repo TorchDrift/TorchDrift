@@ -1,7 +1,10 @@
-Welcome to TorchDrift!
-======================
+TorchDrift: drift detection on PyTorch
+======================================
 
-TorchDrift is a PyTorch package for monitoring models and detecting drift.
+TorchDrift is a data and concept drift library for PyTorch. It lets you monitor your PyTorch models to see if they operate within spec.
+
+We focus on practical application
+and strive to seamlessly integrate with PyTorch.
 
 .. toctree::
    :maxdepth: 2
@@ -32,8 +35,30 @@ TorchDrift is a PyTorch package for monitoring models and detecting drift.
    reducers
    data_functional
    utils
-   
-   
+
+
+Authors
+=======
+
+TorchDrift is a joint project of Orobix Srl, Bergamo, Italy and
+MathInf GmbH, Garching b. München, Germany.
+
+The TorchDrift Team: Thomas Viehmann, Luca Antiga, Daniele Cortinovis, Lisa Lozza
+
+Acknowledgements
+================
+
+We were inspired by
+
+- Failing Loudly: An Empirical Study of Methods for Detecting Dataset
+  Shift, NeurIPS 2019
+  https://github.com/steverab/failing-loudly
+- Hendrycks & Dietterich:
+  Benchmarking Neural Network Robustness to Common Corruptions and Perturbations
+  ICLR 2019
+  https://github.com/hendrycks/robustness/
+- Van Looveren et al.: Alibi Detect https://github.com/SeldonIO/alibi-detect/
+
 
 Indices and tables
 ==================
