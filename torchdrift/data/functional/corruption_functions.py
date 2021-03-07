@@ -26,6 +26,7 @@
 from torch import Tensor
 import torch
 import math
+import torchdrift.utils
 
 __all__ = []
 
@@ -49,7 +50,9 @@ def _export(fn):
 
 
 def interpolate_severity(img, cifar, imagenet, severity):
-    assert severity >= 1 and severity <= 5
+    torchdrift.utils.check(
+        severity >= 1 and severity <= 5, "severity needs to be between 1 and 5"
+    )
     length = (img.size(-1) * img.size(-2)) ** 0.5
     alpha = max(min((length - 32) / (224 - 32), 1), 0)
     res = (1 - alpha) * cifar[severity - 1] + alpha * imagenet[severity - 1]

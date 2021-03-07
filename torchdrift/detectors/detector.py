@@ -1,4 +1,5 @@
 import torch
+import torchdrift.utils
 
 
 class Detector(torch.nn.Module):
@@ -35,7 +36,9 @@ class Detector(torch.nn.Module):
         """Performs a statistical test for drift and returns the p-value.
 
         This method calls `predict_shift_from_features` under the hood, so you only need to override that when subclassing."""
-        assert self.base_outputs is not None, "Please call fit before compute_p_value"
+        torchdrift.utils.check(
+            self.base_outputs is not None, "Please call fit before compute_p_value"
+        )
         _, p_value = self.predict_shift_from_features(
             self.base_outputs, inputs, compute_score=False, compute_p_value=True
         )
@@ -47,7 +50,9 @@ class Detector(torch.nn.Module):
         """Performs a statistical test for drift and returns the score or, if `return_p_value` has been set in the constructor, the p-value.
 
         This method calls `predict_shift_from_features` under the hood, so you only need to override that when subclassing."""
-        assert self.base_outputs is not None, "Please call fit before predict_shift"
+        torchdrift.utils.check(
+            self.base_outputs is not None, "Please call fit before predict_shift"
+        )
         ood_score, p_value = self.predict_shift_from_features(
             self.base_outputs,
             inputs,

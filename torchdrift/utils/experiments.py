@@ -1,6 +1,7 @@
 import torch
 import tqdm
 from .fit import fit
+import torchdrift.utils
 
 
 class DriftDetectionExperiment:
@@ -46,7 +47,10 @@ class DriftDetectionExperiment:
         ood_dl = ood_datamodule.default_dataloader(
             batch_size=num_ood, num_samples=num_ood * num_runs
         )
-        assert num_ood > 0 and num_ind >= 0
+        torchdrift.utils.check(
+            num_ood > 0 and num_ind >= 0,
+            "need at least one out of distribution sample and cannot have more than the sample size",
+        )
         all_drifted_scores = []
         all_ind_scores = []
         for r, (ind_batch, ood_batch) in tqdm.tqdm(

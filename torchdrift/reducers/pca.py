@@ -1,5 +1,6 @@
 import torch
 from . import Reducer
+import torchdrift.utils
 
 
 class PCAReducer(Reducer):
@@ -21,7 +22,10 @@ class PCAReducer(Reducer):
 
     def fit(self, x: torch.Tensor) -> torch.Tensor:
         batch, feat = x.shape
-        assert min(batch, feat) >= self.n_components
+        torchdrift.utils.check(
+            min(batch, feat) >= self.n_components,
+            "need number of samples and size of feature to be at least the number of components",
+        )
         self.mean = x.mean(0, keepdim=True)
         x = x - self.mean
         u, s, v = x.svd()

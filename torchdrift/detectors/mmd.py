@@ -3,24 +3,26 @@ from typing import Optional
 import torch
 
 from . import Detector
+import torchdrift.utils
 
 
 class Kernel:
     """Base class for kernels
 
-Unless otherwise noted, all kernels implementing lengthscale detection
-use the median of pairwise distances as the lengthscale."""
+    Unless otherwise noted, all kernels implementing lengthscale detection
+    use the median of pairwise distances as the lengthscale."""
+
     pass
 
 
 class GaussianKernel(Kernel):
     r"""Unnormalized gaussian kernel
 
-.. math::
-    k(|x-y|) = \exp(-|x-y|^2/(2\ell^2))
+    .. math::
+        k(|x-y|) = \exp(-|x-y|^2/(2\ell^2))
 
-where :math:`\ell` is the `lengthscale` (autodetected or given).
-"""
+    where :math:`\ell` is the `lengthscale` (autodetected or given)."""
+
     def __init__(self, lengthscale=None):
         super().__init__()
         self.lengthscale = lengthscale
@@ -37,11 +39,10 @@ where :math:`\ell` is the `lengthscale` (autodetected or given).
 class ExpKernel(Kernel):
     r"""Unnormalized exponential kernel
 
-.. math::
-    k(|x-y|) = \exp(-|x-y|/\ell)
+    .. math::
+        k(|x-y|) = \exp(-|x-y|/\ell)
 
-where :math:`\ell` is the `lengthscale` (autodetected or given).
-"""
+    where :math:`\ell` is the `lengthscale` (autodetected or given)."""
 
     def __init__(self, lengthscale=None):
         super().__init__()
@@ -58,11 +59,10 @@ where :math:`\ell` is the `lengthscale` (autodetected or given).
 class RationalQuadraticKernel(Kernel):
     r"""Unnormalized rational quadratic kernel
 
-.. math::
-    k(|x-y|) = (1+|x-y|^2/(2 \alpha \ell^2))^{-\alpha}
+    .. math::
+        k(|x-y|) = (1+|x-y|^2/(2 \alpha \ell^2))^{-\alpha}
 
-where :math:`\ell` is the `lengthscale` (autodetected or given).
-"""
+    where :math:`\ell` is the `lengthscale` (autodetected or given)."""
 
     def __init__(self, lengthscale=None, alpha=1.0):
         super().__init__()
@@ -95,7 +95,7 @@ def kernel_mmd(x, y, n_perm=1000, kernel=GaussianKernel()):
 
     n, d = x.shape
     m, d2 = y.shape
-    assert d == d2
+    torchdrift.utils.check(d == d2, "feature dimension mismatch")
     xy = torch.cat([x.detach(), y.detach()], dim=0)
     dists = torch.cdist(xy, xy, p=2.0)
     # we are a bit sloppy here as we just keep the diagonal and everything twice
@@ -161,9 +161,9 @@ class KernelMMDDriftDetector(Detector):
         compute_p_value: bool,
         individual_samples: bool = False,
     ):
-        assert (
-            not individual_samples
-        ), "Individual samples not supported by MMD detector"
+        torchdrift.utils.check(
+            not individual_samples, "Individual samples not supported by MMD detector"
+        )
         if not compute_p_value:
             ood_score = kernel_mmd(
                 outputs, base_outputs, n_perm=None, kernel=self.kernel

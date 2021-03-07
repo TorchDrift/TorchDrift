@@ -4,6 +4,7 @@ import torch
 import numpy
 
 from . import Detector
+import torchdrift.utils
 
 try:
     import numba
@@ -60,7 +61,7 @@ def ks_two_sample_multi_dim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     """
     n_x, n_features = x.shape
     n_y, n_features_y = y.shape
-    assert n_features == n_features_y
+    torchdrift.utils.check(n_features == n_features_y, "feature dimension mismatch")
 
     joint_sorted = torch.argsort(torch.cat([x, y], dim=0), dim=0)
     sign = (joint_sorted < n_x).to(dtype=torch.float) * (1 / (n_x) + 1 / (n_y)) - (
@@ -92,9 +93,9 @@ class KSDriftDetector(Detector):
         compute_p_value: bool,
         individual_samples: bool = False,
     ):
-        assert (
-            not individual_samples
-        ), "Individual samples not supported by MMD detector"
+        torchdrift.utils.check(
+            not individual_samples, "Individual samples not supported by MMD detector"
+        )
         ood_score = ks_two_sample_multi_dim(outputs, self.base_outputs)
         # Like failing loudly suggests to return the minimum p-value under the
         # label Bonferroni correction, this would correspond to the maximum score

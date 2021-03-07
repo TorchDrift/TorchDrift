@@ -39,7 +39,9 @@ def test_gaussian_blur():
     a1 = torchdrift.data.functional.gaussian_blur(a, severity=5)
     a2 = scipy.ndimage.gaussian_filter(a, [0, 0, 6, 6])
     assert ((a1 - a2)[:, :, 32:-32, 32:-32]).max().abs() < 1e-2
-
+    with pytest.raises(RuntimeError):
+        a3 = torchdrift.data.functional.gaussian_blur(a, severity=6)
+        
 
 if __name__ == "__main__":
     pytest.main([__file__])
