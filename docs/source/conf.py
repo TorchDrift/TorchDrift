@@ -86,3 +86,15 @@ nbsphinx_prolog = """
         }
     </style>
 """
+
+html_theme = "insipid"
+
+html_context = {
+    'display_github': True,
+    'github_user': 'torchdrift',
+    'github_repo': 'torchdrift',
+    }
+html_theme_options = {
+    'left_buttons': [],
+    'right_buttons': ['repo-button.html', ],
+}
