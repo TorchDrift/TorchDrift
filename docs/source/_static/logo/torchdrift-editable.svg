@@ -11,9 +11,9 @@
    sodipodi:docname="torchdrift-editable.svg"
    id="svg18"
    version="1.2"
-   viewBox="0 0 3746.9723 600.32381"
-   height="679.44751"
-   width="4242.5396"
+   viewBox="0 0 3975.2306 821.89582"
+   height="930.22308"
+   width="4500.9868"
    inkscape:export-filename="/tmp/torchdrift-huge.png"
    inkscape:export-xdpi="50.017109"
    inkscape:export-ydpi="50.017109"><metadata
@@ -35,8 +35,8 @@
    inkscape:window-maximized="1"
    inkscape:window-y="0"
    inkscape:window-x="0"
-   inkscape:cy="777.02874"
-   inkscape:cx="470.79606"
+   inkscape:cy="877.43211"
+   inkscape:cx="573.73205"
    inkscape:zoom="0.13881503"
    showgrid="false"
    id="namedview20"
@@ -59,12 +59,14 @@
    id="title10">Notebook 2</title>
 
 
+
+
 \n<g
    style="display:none;opacity:0.463087"
    inkscape:label="Layer 1"
    id="layer3"
    inkscape:groupmode="layer"
-   transform="translate(-496.69027,-140.45858)">
+   transform="translate(-405.74148,-51.747486)">
   <g
      id="g16-9"
      transform="matrix(4.135313,0,0,4.933321,-1960.5314,-2017.6681)"
@@ -80,7 +82,15 @@
    inkscape:label="Layer 2"
    id="layer4"
    inkscape:groupmode="layer"
-   transform="translate(-496.69027,-140.45858)">
+   transform="translate(-405.74148,-51.747486)">
+  <rect
+     style="opacity:1;fill:#ffffff;stroke-width:11.7806;stroke-linecap:round;stroke-linejoin:round"
+     id="rect19"
+     width="3976.8333"
+     height="821.89581"
+     x="404.98608"
+     y="51.747486"
+     ry="189.31938" />
   <g
      id="g52"
      transform="translate(227.95484,-280.52094)">
