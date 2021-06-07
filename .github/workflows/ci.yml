@@ -55,9 +55,15 @@ jobs:
           pip install pytest
           pip install codecov
           pip install pytest-codecov
+          pip install tqdm
+          pip install flake8
+
       - name: Install typing for old Python
         run: pip install typing
         if: matrix.installTyping
+
+      - name: Lint
+        run: python -m flake8
 
       - name: Build the code
         run: python ./setup.py build_ext -i
