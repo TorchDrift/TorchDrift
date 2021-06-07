@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version:
           - '3.8'
           - '3.9'
@@ -54,6 +54,7 @@ jobs:
           pip install torch
           pip install pytest
           pip install codecov
+          pip install pytest-codecov
       - name: Install typing for old Python
         run: pip install typing
         if: matrix.installTyping
