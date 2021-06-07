@@ -1,0 +1,92 @@
+on:
+  # Trigger the workflow on push or
+  # pull request, but only for the
+  # master branch.
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  # Weekly run to account for
+  # changed dependencies.
+  schedule:
+    - cron: '17 03 * * 0'
+
+name: CI
+jobs:
+  build:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version:
+          - '3.8'
+          - '3.9'
+        include:
+          - os: ubuntu-20.04
+            python-version: '3.8'
+            installTyping: ${{ true }}
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          # This path is specific to Ubuntu
+          path: ~/.cache/pip
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: v1-pip-${{ runner.os }}-${{ matrix.python-version }}
+          restore-keys: |
+            v1-pip-${{ runner.os }}
+            v1-pip-
+      - name: Install dependencies
+        run: |
+          pip install torch
+          pip install pytest
+          pip install codecov
+      - name: Install typing for old Python
+        run: pip install typing
+        if: matrix.installTyping
+
+      - name: Build the code
+        run: python ./setup.py build_ext -i
+
+      - name: Run tests
+        run: python -m pytest --cov-report term --cov=torchdrift test/  -v
+
+      - name: Cleanup
+        run: python ./setup.py clean
+
+      - name: Re-build with coverage info
+        run: CFLAGS="-coverage" python ./setup.py build_ext -i
+
+      - name: Test with coverage
+        run: python -m pytest tests
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          #files: ./coverage1.xml,./coverage2.xml
+          #directory: ./coverage/reports/
+          #flags: unittests
+          #env_vars: OS,PYTHON
+          name: codecov-python-${{ matrix.python-version }}
+          #fail_ci_if_error: true
+          path_to_write_report: ./codecov-report.txt
+          #verbose: true
+
+      - name: Archive code coverage result
+        uses: 'actions/upload-artifact@v2'
+        with:
+          name: code-coverage-${{ matrix.os }}-${{ matrix.python-version }}
+          path: codecov-report.txt
