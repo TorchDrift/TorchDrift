@@ -56,7 +56,10 @@ jobs:
           pip install codecov
           pip install pytest-codecov
           pip install tqdm
+          # testing
           pip install flake8
+          pip install scipy
+          pip install sklearn
 
       - name: Install typing for old Python
         run: pip install typing
