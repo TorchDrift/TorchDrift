@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Union, Iterable, List
+from typing import Optional, Union, List
 import typing
 from ..reducers import Reducer
 from ..detectors import Detector

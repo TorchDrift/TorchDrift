@@ -1,7 +1,6 @@
 import pytest
 import torchdrift
 import torch
-import sklearn.decomposition
 
 
 def test_detector():

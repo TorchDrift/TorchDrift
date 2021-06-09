@@ -11,7 +11,8 @@ try:
 
     njit = numba.jit(nopython=True, fastmath=True)
 except ImportError:  # pragma: no cover
-    njit = lambda x: x
+    def njit(x):
+        return x
 
 
 # Numerically stable p-Value computation, see
