@@ -152,6 +152,47 @@ class KernelMMDDriftDetector(Detector):
         super().__init__(return_p_value=return_p_value)
         self.n_perm = n_perm
         self.kernel = kernel
+        self.n_test = None
+        self.scores = None
+
+    def fit(self, x: torch.Tensor, n_test=None):
+        """Record a sample as the reference distribution
+
+    Args:
+        x: The reference data
+        n_test: If an int is specified, the last n_test datapoints
+            will not be considered part of the reference data. Instead,
+            bootstrappin using permutations will be used to determine
+            the distribution under the null hypothesis at fit time.
+            Future testing must then always be done with n_test elements
+            to get p-values.
+"""
+        x = x.detach()
+        if n_test is None:
+            self.base_outputs = x
+        else:
+            torchdrift.utils.check(0 < n_test < x.size(0), "n_test must be strictly between 0 and the number of samples")
+            self.n_test = n_test
+            self.base_outputs = x[:-n_test]
+
+            n_ref = x.size(0) - n_test
+
+            scores = []
+            for i in range(self.n_perm):
+                slicing = torch.randperm(x.size(0))
+                scores.append(kernel_mmd(
+                    x[slicing[:-n_test]], x[slicing[-n_test:]], n_perm=None, kernel=self.kernel))
+            scores = torch.stack(scores)
+
+            # limited smallish sample sizes, the MMD appears to exhibit a nonzero offset
+            # which vanishes in the limit we adapt. After correcting this, the gamma distribution
+            # approximation suggested by Gretton et al seems very good.
+            self.dist_min = scores.min().double()
+            mean = scores.mean() - self.dist_min
+            var = scores.var().double()
+            self.dist_alpha = mean**2 / var
+            self.dist_beta = mean / var
+            self.scores = scores
 
     def predict_shift_from_features(
         self,
@@ -166,11 +207,19 @@ class KernelMMDDriftDetector(Detector):
         )
         if not compute_p_value:
             ood_score = kernel_mmd(
-                outputs, base_outputs, n_perm=None, kernel=self.kernel
+                base_outputs, outputs, n_perm=None, kernel=self.kernel
             )
             p_value = None
-        else:
+        elif self.n_test is None:
             ood_score, p_value = kernel_mmd(
-                outputs, base_outputs, n_perm=self.n_perm, kernel=self.kernel
+                base_outputs, outputs, n_perm=self.n_perm, kernel=self.kernel
             )
+        else:
+            torchdrift.utils.check(self.n_test == outputs.size(0),
+                                   "number of test samples does not match calibrated number")
+            ood_score = kernel_mmd(
+                base_outputs, outputs, n_perm=None, kernel=self.kernel
+            )
+            p_value = torch.igammac(self.dist_alpha, self.dist_beta * (ood_score - self.dist_min).clamp(min=0))  # needs PyTorch >=1.8
+
         return ood_score, p_value
