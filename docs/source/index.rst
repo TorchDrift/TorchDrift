@@ -29,6 +29,7 @@ and strive to seamlessly integrate with PyTorch.
    notebooks/drift_detection_overview
    notebooks/comparing_drift_detectors
    notebooks/note_on_mmd
+   publications
 
 .. toctree::
    :maxdepth: 2
