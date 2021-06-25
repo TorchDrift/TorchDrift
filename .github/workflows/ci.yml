@@ -56,6 +56,9 @@ jobs:
           pip install codecov
           pip install pytest-codecov
           pip install tqdm
+          pip install numpy
+          pip install cython
+          pip install POT
           # testing
           pip install flake8
           pip install scipy
