@@ -108,6 +108,7 @@ class KSDriftDetector(Detector):
             ny, _ = outputs.shape
             # multiply by n_features for Bonferroni correction.
             p_value = min(1.0, ks_p_value(nx, ny, ood_score.item()) * n_features)
+            p_value = torch.as_tensor(p_value, device=ood_score.device)
         else:
             p_value = None
         return ood_score, p_value
