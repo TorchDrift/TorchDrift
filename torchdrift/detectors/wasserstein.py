@@ -111,7 +111,7 @@ class WassersteinDriftDetector(Detector):
             the distribution under the null hypothesis at fit time.
             Future testing must then always be done with n_test elements
             to get p-values.
-"""
+    """
         x = x.detach()
         if n_test is None:
             self.base_outputs = x
@@ -120,11 +120,12 @@ class WassersteinDriftDetector(Detector):
             self.n_test = n_test
             self.base_outputs = x[:-n_test]
 
+            x = x.to(device="cpu")
             n_ref = x.size(0) - n_test
             with_distant_point = self.fraction_to_match < 1.0
 
-            weights_x = torch.full((n_ref,), 1.0 / n_ref, device=x.device, dtype=torch.double)
-            weights_y = torch.full((n_test + int(with_distant_point),), self.fraction_to_match / n_test, device=x.device, dtype=torch.double)
+            weights_x = torch.full((n_ref,), 1.0 / n_ref, dtype=torch.double)
+            weights_y = torch.full((n_test + int(with_distant_point),), self.fraction_to_match / n_test, dtype=torch.double)
             if with_distant_point:
                 weights_y[-1] = 1.0 - self.fraction_to_match
             p = self.wasserstein_p
@@ -178,7 +179,7 @@ class WassersteinDriftDetector(Detector):
             ood_score = wasserstein(
                 base_outputs, outputs, p=self.wasserstein_p, fraction_to_match=self.fraction_to_match,
                 n_perm=None)
-            p_value = torch.igammac(self.dist_alpha, self.dist_beta * (ood_score - self.dist_min).clamp_(min=0))  # needs PyTorch >=1.8
+            p_value = torch.igammac(self.dist_alpha, self.dist_beta * (ood_score.cpu() - self.dist_min).clamp_(min=0)).to(outputs.device)  # needs PyTorch >=1.8
             # z = (ood_score - self.dist_mean) / self.dist_std
             # p_value = 0.5 * torch.erfc(z * (0.5**0.5))
             # p_value = (self.scores > ood_score).float().mean()
