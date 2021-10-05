@@ -13,7 +13,8 @@ def fit(
     reducers_detectors: Union[Reducer, Detector, List[Union[Reducer, Detector]]],
     *,
     num_batches: Optional[int] = None,
-    device: Union[torch.device, str, None] = None
+    device: Union[torch.device, str, None] = None,
+    n_test: Optional[int] = None,
 ):
     """Train drift detector on reference distribution.
 
@@ -45,6 +46,9 @@ def fit(
 
     for m in reducers_detectors:
         if hasattr(m, "fit"):
-            all_outputs = m.fit(all_outputs)
+            if n_test is None:
+                all_outputs = m.fit(all_outputs)
+            else:
+                all_outputs = m.fit(all_outputs, n_test=n_test)
         else:
             all_outputs = m(all_outputs)
