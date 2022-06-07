@@ -11,6 +11,7 @@ try:
 
     njit = numba.jit(nopython=True, fastmath=True)
 except ImportError:  # pragma: no cover
+
     def njit(x):
         return x
 

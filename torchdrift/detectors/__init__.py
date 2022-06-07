@@ -6,6 +6,6 @@ from .partial_mmd import (
     partial_kernel_mmd_twostage,
     partial_kernel_mmd_approx,
     partial_kernel_mmd_qp,
-    PartialKernelMMDDriftDetector
+    PartialKernelMMDDriftDetector,
 )
 from . import mmd

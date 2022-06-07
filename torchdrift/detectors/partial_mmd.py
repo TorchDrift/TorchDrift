@@ -6,24 +6,31 @@ from .detector import Detector
 import torchdrift
 import warnings
 
-def partial_kernel_mmd_twostage(x, y, n_perm=None,
-                                kernel=GaussianKernel(),
-                                fraction_to_match=1.0, wasserstein_p=2.0):
-    """Partial kernel MMD using a Wasserstein coupling to obtain the weight for the reference.
-    """
+
+def partial_kernel_mmd_twostage(
+    x, y, n_perm=None, kernel=GaussianKernel(), fraction_to_match=1.0, wasserstein_p=2.0
+):
+    """Partial kernel MMD using a Wasserstein coupling to obtain the weight for the reference."""
     torchdrift.utils.check(
         n_perm is None,
         "Bootstrapping within partial MMD is not implemented, use bootstrap during fit",
-        error_class=NotImplementedError
+        error_class=NotImplementedError,
     )
     n, d = x.shape
     m, d2 = y.shape
     if fraction_to_match < 1.0:
         _, coupling = torchdrift.detectors.wasserstein(
-            x, y,
-            fraction_to_match=fraction_to_match, return_coupling=True, n_perm=None,
-            p=wasserstein_p)
-        w = coupling[:, :-1].sum(1).to(device=x.device, dtype=x.dtype) / fraction_to_match
+            x,
+            y,
+            fraction_to_match=fraction_to_match,
+            return_coupling=True,
+            n_perm=None,
+            p=wasserstein_p,
+        )
+        w = (
+            coupling[:, :-1].sum(1).to(device=x.device, dtype=x.dtype)
+            / fraction_to_match
+        )
     else:
         w = torch.full((n,), 1.0 / n, device=x.device, dtype=x.dtype)
 
@@ -39,8 +46,10 @@ def partial_kernel_mmd_twostage(x, y, n_perm=None,
     mmd = (w @ k_x) @ w + k_y.sum() / (m * m) - 2 * (w @ k_xy).sum() / m
     return mmd
 
-def partial_kernel_mmd_qp(x, y, n_perm=None, kernel=GaussianKernel(),
-                          fraction_to_match=1.0):
+
+def partial_kernel_mmd_qp(
+    x, y, n_perm=None, kernel=GaussianKernel(), fraction_to_match=1.0
+):
     """Partial Kernel MMD using quadratic programming.
 
     This is very slow and mainly intended for reference purposes.
@@ -49,9 +58,10 @@ def partial_kernel_mmd_qp(x, y, n_perm=None, kernel=GaussianKernel(),
     torchdrift.utils.check(
         n_perm is None,
         "Bootstrapping within partial MMD is not implemented, use bootstrap during fit",
-        error_class=NotImplementedError
+        error_class=NotImplementedError,
     )
     import qpsolvers
+
     n, d = x.shape
     m, d2 = y.shape
     torchdrift.utils.check(d == d2, "feature dimension mismatch")
@@ -67,28 +77,39 @@ def partial_kernel_mmd_qp(x, y, n_perm=None, kernel=GaussianKernel(),
     R = torch.cholesky(k_x, upper=True)
     d = torch.inverse(R.t()) @ (k_xy.sum(1) / m)
     lb = torch.zeros((n,), dtype=k_x.dtype, device=k_x.device)
-    ub = torch.full((n,), 1.0 / (n * fraction_to_match), dtype=k_x.dtype, device=k_x.device)
-    w = qpsolvers.solve_ls(R.cpu().numpy(), d.cpu().numpy(),
-                           lb=lb.cpu().numpy(), ub=ub.cpu().numpy(),
-                           A=torch.ones((1, n,), dtype=R.dtype).numpy(),
-                           b=torch.ones((1,), dtype=R.dtype).numpy())
+    ub = torch.full(
+        (n,), 1.0 / (n * fraction_to_match), dtype=k_x.dtype, device=k_x.device
+    )
+    w = qpsolvers.solve_ls(
+        R.cpu().numpy(),
+        d.cpu().numpy(),
+        lb=lb.cpu().numpy(),
+        ub=ub.cpu().numpy(),
+        A=torch.ones(
+            (
+                1,
+                n,
+            ),
+            dtype=R.dtype,
+        ).numpy(),
+        b=torch.ones((1,), dtype=R.dtype).numpy(),
+    )
     torchdrift.utils.check(
         w is not None,
-        'QP failed to find a solution (numerical accuracy with the bounds?)'
+        "QP failed to find a solution (numerical accuracy with the bounds?)",
     )
     w = torch.as_tensor(w, device=k_x.device, dtype=k_x.dtype)
     mmd = (w @ k_x) @ w + k_y.sum() / (m * m) - 2 * (w @ k_xy).sum() / m
     return mmd
 
+
 def partial_kernel_mmd_approx(
-        x, y,
-        fraction_to_match=1.0,
-        kernel=GaussianKernel(),
-        n_perm=None):
+    x, y, fraction_to_match=1.0, kernel=GaussianKernel(), n_perm=None
+):
     torchdrift.utils.check(
         n_perm is None,
         "Bootstrapping within partial MMD is not implemented, use bootstrap during fit",
-        error_class=NotImplementedError
+        error_class=NotImplementedError,
     )
     rng = torch.Generator(device=x.device).manual_seed(1234)
     n, d = x.shape
@@ -101,7 +122,9 @@ def partial_kernel_mmd_approx(
     k_y = k[n:, n:]
     k_xy = k[:n, n:]
 
-    w = torch.full((n,), 1.0 / n, dtype=k_x.dtype, device=k_x.device, requires_grad=False)
+    w = torch.full(
+        (n,), 1.0 / n, dtype=k_x.dtype, device=k_x.device, requires_grad=False
+    )
     mmd = (w @ k_x) @ w + k_y.sum() / (m * m) - 2 * (w @ k_xy).sum() / m
 
     for i in range(100):
@@ -117,8 +140,9 @@ def partial_kernel_mmd_approx(
             grad_mmd_max = grad_mmd_max.max()
         else:  # pragma: no cover
             grad_mmd_max = torch.zeros_like(r)
-        active_mask = (((w > 0) | (grad_mmd < grad_mmd_min * r))
-                       & ((w < 1.0 / (n * fraction_to_match)) | (grad_mmd > grad_mmd_max * r)))
+        active_mask = ((w > 0) | (grad_mmd < grad_mmd_min * r)) & (
+            (w < 1.0 / (n * fraction_to_match)) | (grad_mmd > grad_mmd_max * r)
+        )
 
         H_mmd_active = k_x[active_mask][:, active_mask]
         if H_mmd_active.size(0) == 0:
@@ -139,8 +163,12 @@ def partial_kernel_mmd_approx(
 
             w_cand.clamp_(min=0, max=1.0 / (n * fraction_to_match))
             w_cand /= w_cand.sum()
-            mmd_cand = (w_cand @ k_x) @ w_cand + k_y.sum() / (m * m) - 2 * (w_cand @ k_xy).sum() / m
-            is_lower = (mmd_cand < mmd)
+            mmd_cand = (
+                (w_cand @ k_x) @ w_cand
+                + k_y.sum() / (m * m)
+                - 2 * (w_cand @ k_xy).sum() / m
+            )
+            is_lower = mmd_cand < mmd
             mmd = torch.where(is_lower, mmd_cand, mmd)
             w = torch.where(is_lower, w_cand, w)
             step /= 5
@@ -156,29 +184,36 @@ def partial_kernel_mmd_approx(
             grad_mmd_max = grad_mmd_max.max()
         else:  # pragma: no cover
             grad_mmd_max = torch.zeros_like(r)
-        active_mask = (((w > 0) | (grad_mmd < grad_mmd_min * r)) &
-                       ((w < 1.0 / (n * fraction_to_match)) | (grad_mmd > grad_mmd_max * r)))
+        active_mask = ((w > 0) | (grad_mmd < grad_mmd_min * r)) & (
+            (w < 1.0 / (n * fraction_to_match)) | (grad_mmd > grad_mmd_max * r)
+        )
         step = 1e-1
         for j in range(5):
             w_candnd = w.clone()
             grad_mmd_x = grad_mmd.clone()
-            grad_mmd_x = torch.where(active_mask,
-                                     grad_mmd_x,
-                                     torch.zeros((), device=grad_mmd_x.device, 
-                                                 dtype=grad_mmd_x.dtype))
-            grad_mmd_x = torch.where(active_mask,
-                                     grad_mmd_x,
-                                     grad_mmd_x - grad_mmd_x.mean())
+            grad_mmd_x = torch.where(
+                active_mask,
+                grad_mmd_x,
+                torch.zeros((), device=grad_mmd_x.device, dtype=grad_mmd_x.dtype),
+            )
+            grad_mmd_x = torch.where(
+                active_mask, grad_mmd_x, grad_mmd_x - grad_mmd_x.mean()
+            )
             w_cand -= step * grad_mmd_x
             w_cand.clamp_(min=0, max=1.0 / (n * fraction_to_match))
             w_cand /= w_cand.sum()
-            mmd_cand = (w_cand @ k_x) @ w_cand + k_y.sum() / (m * m) - 2 * (w_cand @ k_xy).sum() / m
-            is_lower = (mmd_cand < mmd)
+            mmd_cand = (
+                (w_cand @ k_x) @ w_cand
+                + k_y.sum() / (m * m)
+                - 2 * (w_cand @ k_xy).sum() / m
+            )
+            is_lower = mmd_cand < mmd
             mmd = torch.where(is_lower, mmd_cand, mmd)
             w = torch.where(is_lower, w_cand, w)
             step = step / 5
 
     return mmd
+
 
 class PartialKernelMMDDriftDetector(Detector):
     """Drift detector based on the partial MMD Distance.
@@ -198,9 +233,13 @@ class PartialKernelMMDDriftDetector(Detector):
     METHOD_QP = 3
 
     def __init__(
-            self, *, return_p_value=False, n_perm=1000, fraction_to_match=1.0,
-            kernel=GaussianKernel(),
-            method=METHOD_TWOSTAGE,
+        self,
+        *,
+        return_p_value=False,
+        n_perm=1000,
+        fraction_to_match=1.0,
+        kernel=GaussianKernel(),
+        method=METHOD_TWOSTAGE,
     ):
         super().__init__(return_p_value=return_p_value)
         self.fraction_to_match = fraction_to_match
@@ -217,24 +256,26 @@ class PartialKernelMMDDriftDetector(Detector):
         else:  # pragma: no cover
             raise RuntimeError("Invalid Partial MMD method")
 
-
     def fit(self, x: torch.Tensor, n_test: Optional[int] = None):
         """Record a sample as the reference distribution
 
-    Args:
-        x: The reference data
-        n_test: If an int is specified, the last n_test datapoints
-            will not be considered part of the reference data. Instead,
-            bootstrappin using permutations will be used to determine
-            the distribution under the null hypothesis at fit time.
-            Future testing must then always be done with n_test elements
-            to get p-values.
-    """
+        Args:
+            x: The reference data
+            n_test: If an int is specified, the last n_test datapoints
+                will not be considered part of the reference data. Instead,
+                bootstrappin using permutations will be used to determine
+                the distribution under the null hypothesis at fit time.
+                Future testing must then always be done with n_test elements
+                to get p-values.
+        """
         x = x.detach()
         if n_test is None:
             self.base_outputs = x
         else:
-            torchdrift.utils.check(0 < n_test < x.size(0), "n_test must be strictly between 0 and the number of samples")
+            torchdrift.utils.check(
+                0 < n_test < x.size(0),
+                "n_test must be strictly between 0 and the number of samples",
+            )
             self.n_test = n_test
             self.base_outputs = x[:-n_test]
 
@@ -244,7 +285,14 @@ class PartialKernelMMDDriftDetector(Detector):
             scores = []
             for i in range(self.n_perm):
                 slicing = torch.randperm(x.size(0))
-                scores.append(self.partial_mmd(x[slicing[:-n_test]], x[slicing[-n_test:]], fraction_to_match=self.fraction_to_match, kernel=self.kernel))
+                scores.append(
+                    self.partial_mmd(
+                        x[slicing[:-n_test]],
+                        x[slicing[-n_test:]],
+                        fraction_to_match=self.fraction_to_match,
+                        kernel=self.kernel,
+                    )
+                )
             scores = torch.stack(scores)
 
             self.scores = scores
@@ -252,7 +300,7 @@ class PartialKernelMMDDriftDetector(Detector):
             self.dist_min = scores.min().double()
             mean = scores.mean() - self.dist_min
             var = scores.var().double()
-            self.dist_alpha = mean**2 / var
+            self.dist_alpha = mean ** 2 / var
             self.dist_beta = mean / var
             self.scores = scores
         return x
@@ -266,11 +314,14 @@ class PartialKernelMMDDriftDetector(Detector):
         individual_samples: bool = False,
     ):
         torchdrift.utils.check(
-            not individual_samples, "Individual samples not supported by Wasserstein distance detector"
+            not individual_samples,
+            "Individual samples not supported by Wasserstein distance detector",
         )
         if not compute_p_value:
             ood_score = self.partial_mmd(
-                base_outputs, outputs, fraction_to_match=self.fraction_to_match,
+                base_outputs,
+                outputs,
+                fraction_to_match=self.fraction_to_match,
                 n_perm=None,
             )
             p_value = None
@@ -278,14 +329,22 @@ class PartialKernelMMDDriftDetector(Detector):
             torchdrift.utils.check(
                 self.n_test is not None,
                 "Bootstrapping within partial MMD is not implemented, use bootstrap during fit",
-                error_class=NotImplementedError
+                error_class=NotImplementedError,
             )
-            torchdrift.utils.check(self.n_test == outputs.size(0),
-                                   "number of test samples does not match calibrated number")
+            torchdrift.utils.check(
+                self.n_test == outputs.size(0),
+                "number of test samples does not match calibrated number",
+            )
             ood_score = self.partial_mmd(
-                base_outputs, outputs, fraction_to_match=self.fraction_to_match,
-                n_perm=None)
-            p_value = torch.igammac(self.dist_alpha, self.dist_beta * (ood_score - self.dist_min).clamp_(min=0))  # needs PyTorch >=1.8
+                base_outputs,
+                outputs,
+                fraction_to_match=self.fraction_to_match,
+                n_perm=None,
+            )
+            p_value = torch.igammac(
+                self.dist_alpha,
+                self.dist_beta * (ood_score - self.dist_min).clamp_(min=0),
+            )  # needs PyTorch >=1.8
             # z = (ood_score - self.dist_mean) / self.dist_std
             # p_value = 0.5 * torch.erfc(z * (0.5**0.5))
             # p_value = (self.scores > ood_score).float().mean()
