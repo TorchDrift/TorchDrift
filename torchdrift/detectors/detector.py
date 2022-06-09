@@ -63,3 +63,11 @@ class Detector(torch.nn.Module):
         if self.return_p_value:
             return p_value
         return ood_score
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        for bname, b in self._buffers.items():
+            if prefix + bname in state_dict and b is None:
+                setattr(self, bname, state_dict[prefix + bname])
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)

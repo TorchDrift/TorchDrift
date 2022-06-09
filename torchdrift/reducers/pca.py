@@ -16,6 +16,8 @@ class PCAReducer(Reducer):
     def __init__(self, n_components: int = 2):
         super().__init__()
         self.n_components = n_components
+        self.register_buffer("mean", None)
+        self.register_buffer("comp", None)
 
     def extra_repr(self) -> str:
         return f"n_components={self.n_components}"
@@ -37,3 +39,11 @@ class PCAReducer(Reducer):
         x = x - self.mean
         reduced = x @ self.comp
         return reduced
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        for bname in ("mean", "comp"):
+            if prefix + bname in state_dict:
+                setattr(self, bname, state_dict[prefix + bname])
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)

@@ -17,6 +17,13 @@ def test_pca():
     red2 = pca(b)
     red2_ref = torch.from_numpy(pca_ref.transform(b))
 
+def test_reducer_load_save():
+    pca = torchdrift.reducers.PCAReducer(n_components=2)
+    a = torch.randn(100, 50, dtype=torch.double)
+    red = pca.fit(a)
+    pca2 = torchdrift.reducers.PCAReducer(n_components=2)
+    pca2.load_state_dict(pca.state_dict())
+    red2 = pca2(a)
 
 def test_reducer():
     x = torch.randn(5, 5)
