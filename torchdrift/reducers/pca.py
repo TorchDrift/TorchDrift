@@ -39,11 +39,3 @@ class PCAReducer(Reducer):
         x = x - self.mean
         reduced = x @ self.comp
         return reduced
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        for bname in ("mean", "comp"):
-            if prefix + bname in state_dict:
-                setattr(self, bname, state_dict[prefix + bname])
-        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
-                                      missing_keys, unexpected_keys, error_msgs)
