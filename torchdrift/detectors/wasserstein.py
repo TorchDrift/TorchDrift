@@ -47,7 +47,7 @@ def wasserstein(x, y, p=2.0, fraction_to_match=1.0, n_perm=1000, return_coupling
     if fraction_to_match < 1.0:
         weights_y[:, -1] = 1.0 - fraction_to_match
 
-    coupling = torch.from_numpy(ot_emd(weights_x[0], weights_y[0], dists_p.cpu()))
+    coupling = torch.from_numpy(ot_emd(weights_x[0].numpy(), weights_y[0].numpy(), dists_p.cpu().numpy()))
 
     if (coupling[:, :num_y].sum() / fraction_to_match - 1).abs().item() > 1e-5:  # pragma: no cover
         raise RuntimeError("Numerical stability failed")
