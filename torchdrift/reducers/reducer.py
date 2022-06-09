@@ -19,3 +19,11 @@ class Reducer(torch.nn.Module):
 
         Override this in your reducer implementation."""
         raise NotImplementedError("Override forward in subclass")
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        for bname, b in self._buffers.items():
+            if prefix + bname in state_dict and b is None:
+                setattr(self, bname, state_dict[prefix + bname])
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
