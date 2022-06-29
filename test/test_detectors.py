@@ -13,7 +13,7 @@ def test_detector():
 
 
 def _test_detector_class(cls):
-    devices = ['cpu'] + (['cuda'] if torch.cuda.is_available() else [])
+    devices = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
     for device in devices:
         torch.manual_seed(1234)
         d = cls()
@@ -34,7 +34,7 @@ def _test_detector_class(cls):
 
 
 def _test_detector_class_fit_bootstrap(cls):
-    devices = ['cpu'] + (['cuda'] if torch.cuda.is_available() else [])
+    devices = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
     for device in devices:
         torch.manual_seed(1234)
         d = cls()
@@ -74,15 +74,16 @@ def test_mmddetector():
         torchdrift.detectors.mmd.RationalQuadraticKernel(lengthscale=1.0, alpha=2.0)
     )
 
+
 def test_wasserstein_detector():
     _test_detector_class(torchdrift.detectors.WassersteinDriftDetector)
     _test_detector_class_fit_bootstrap(torchdrift.detectors.WassersteinDriftDetector)
 
     def partial_wasserstein(return_p_value=False):
         return torchdrift.detectors.WassersteinDriftDetector(
-            return_p_value=return_p_value,
-            fraction_to_match=0.5
+            return_p_value=return_p_value, fraction_to_match=0.5
         )
+
     _test_detector_class(torchdrift.detectors.WassersteinDriftDetector)
     _test_detector_class(partial_wasserstein)
     _test_detector_class_fit_bootstrap(partial_wasserstein)
@@ -92,8 +93,11 @@ def test_wasserstein_detector():
     d, p, c = torchdrift.detectors.wasserstein(x, y, return_coupling=True)
     d, c = torchdrift.detectors.wasserstein(x, y, return_coupling=True, n_perm=None)
 
+
 def test_partial_mmd_detector():
-    _test_detector_class_fit_bootstrap(torchdrift.detectors.PartialKernelMMDDriftDetector)
+    _test_detector_class_fit_bootstrap(
+        torchdrift.detectors.PartialKernelMMDDriftDetector
+    )
     pmmd = functools.partial(
         torchdrift.detectors.PartialKernelMMDDriftDetector,
         fraction_to_match=0.5,
@@ -123,9 +127,7 @@ def test_partial_mmd_detector():
     _test_detector_class_fit_bootstrap(pmmd_qp)
 
     # Check that we can also just get the distance...
-    dd = torchdrift.detectors.PartialKernelMMDDriftDetector(
-        fraction_to_match=0.5
-    )
+    dd = torchdrift.detectors.PartialKernelMMDDriftDetector(fraction_to_match=0.5)
     x = torch.randn(5, 5)
     y = torch.randn(5, 5) + 1.0
     dd.fit(x)

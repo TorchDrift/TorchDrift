@@ -76,7 +76,7 @@ def wasserstein(x, y, p=2.0, fraction_to_match=1.0, n_perm=1000, return_coupling
             dists_p_0 = torch.cat(
                 [dists_p_0, (1.1 * max_dists_p_0).expand(num_x, 1)], dim=1
             )
-        coupling_0 = torch.from_numpy(ot_emd(weights_x[0], weights_y[0], dists_p_0))
+        coupling_0 = torch.from_numpy(ot_emd(weights_x[0].numpy(), weights_y[0].numpy(), dists_p_0.cpu().numpy()))
 
         if (
             coupling_0[:, :num_y].sum() / fraction_to_match - 1
@@ -171,7 +171,7 @@ class WassersteinDriftDetector(Detector):
                     dists_p_0 = torch.cat(
                         [dists_p_0, (1.1 * max_dists_p_0).expand(n_ref, 1)], dim=1
                     )
-                coupling_0 = torch.from_numpy(ot_emd(weights_x, weights_y, dists_p_0))
+                coupling_0 = torch.from_numpy(ot_emd(weights_x.numpy(), weights_y.numpy(), dists_p_0.cpu().numpy()))
                 if (
                     coupling_0[:, :n_test].sum() / self.fraction_to_match - 1
                 ).abs().item() > 1e-5:  # pragma: no cover

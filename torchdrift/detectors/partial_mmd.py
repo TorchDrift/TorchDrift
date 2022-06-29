@@ -8,7 +8,13 @@ import warnings
 
 
 def partial_kernel_mmd_twostage(
-    x, y, n_perm=None, kernel=GaussianKernel(), fraction_to_match=1.0, wasserstein_p=2.0
+    x,
+    y,
+    n_perm=None,
+    kernel=GaussianKernel(),
+    fraction_to_match=1.0,
+    wasserstein_p=2.0,
+    return_w=False,
 ):
     """Partial kernel MMD using a Wasserstein coupling to obtain the weight for the reference."""
     torchdrift.utils.check(
@@ -44,11 +50,18 @@ def partial_kernel_mmd_twostage(
     k_xy = k[:n, n:]
     # The diagonals are always 1 (up to numerical error, this is (3) in Gretton et al.)
     mmd = (w @ k_x) @ w + k_y.sum() / (m * m) - 2 * (w @ k_xy).sum() / m
+    if return_w:
+        return mmd, w
     return mmd
 
 
 def partial_kernel_mmd_qp(
-    x, y, n_perm=None, kernel=GaussianKernel(), fraction_to_match=1.0
+    x,
+    y,
+    n_perm=None,
+    kernel=GaussianKernel(),
+    fraction_to_match=1.0,
+    return_w=False,
 ):
     """Partial Kernel MMD using quadratic programming.
 
@@ -74,7 +87,7 @@ def partial_kernel_mmd_qp(
     k_xy = k[:n, n:]
 
     v = torch.full((m,), 1 / m, dtype=k_y.dtype, device=k_y.device)
-    R = torch.cholesky(k_x, upper=True)
+    R = torch.linalg.cholesky(k_x).mH
     d = torch.inverse(R.t()) @ (k_xy.sum(1) / m)
     lb = torch.zeros((n,), dtype=k_x.dtype, device=k_x.device)
     ub = torch.full(
@@ -100,11 +113,18 @@ def partial_kernel_mmd_qp(
     )
     w = torch.as_tensor(w, device=k_x.device, dtype=k_x.dtype)
     mmd = (w @ k_x) @ w + k_y.sum() / (m * m) - 2 * (w @ k_xy).sum() / m
+    if return_w:
+        return mmd, w
     return mmd
 
 
 def partial_kernel_mmd_approx(
-    x, y, fraction_to_match=1.0, kernel=GaussianKernel(), n_perm=None
+    x,
+    y,
+    fraction_to_match=1.0,
+    kernel=GaussianKernel(),
+    n_perm=None,
+    return_w=False,
 ):
     torchdrift.utils.check(
         n_perm is None,
@@ -147,7 +167,7 @@ def partial_kernel_mmd_approx(
         H_mmd_active = k_x[active_mask][:, active_mask]
         if H_mmd_active.size(0) == 0:
             continue
-        u = torch.cholesky(H_mmd_active)
+        u = torch.linalg.cholesky(H_mmd_active)
         Hinvgr = torch.cholesky_solve(grad_mmd[active_mask][:, None], u).squeeze(1)
 
         w_active = w[active_mask]
@@ -212,6 +232,8 @@ def partial_kernel_mmd_approx(
             w = torch.where(is_lower, w_cand, w)
             step = step / 5
 
+    if return_w:
+        return mmd, w
     return mmd
 
 
@@ -312,18 +334,25 @@ class PartialKernelMMDDriftDetector(Detector):
         compute_score: bool,
         compute_p_value: bool,
         individual_samples: bool = False,
+        return_w: bool = False,
     ):
         torchdrift.utils.check(
             not individual_samples,
             "Individual samples not supported by Wasserstein distance detector",
         )
         if not compute_p_value:
-            ood_score = self.partial_mmd(
+            res = self.partial_mmd(
                 base_outputs,
                 outputs,
                 fraction_to_match=self.fraction_to_match,
                 n_perm=None,
+                return_w=return_w,
             )
+            if not return_w:
+                ood_score = res
+                w = None
+            else:
+                ood_score, w = res
             p_value = None
         else:
             torchdrift.utils.check(
@@ -335,12 +364,18 @@ class PartialKernelMMDDriftDetector(Detector):
                 self.n_test == outputs.size(0),
                 "number of test samples does not match calibrated number",
             )
-            ood_score = self.partial_mmd(
+            res = self.partial_mmd(
                 base_outputs,
                 outputs,
                 fraction_to_match=self.fraction_to_match,
                 n_perm=None,
+                return_w=return_w,
             )
+            if not return_w:
+                ood_score = res
+                w = None
+            else:
+                ood_score, w = res
             p_value = torch.igammac(
                 self.dist_alpha,
                 self.dist_beta * (ood_score - self.dist_min).clamp_(min=0),
@@ -348,4 +383,6 @@ class PartialKernelMMDDriftDetector(Detector):
             # z = (ood_score - self.dist_mean) / self.dist_std
             # p_value = 0.5 * torch.erfc(z * (0.5**0.5))
             # p_value = (self.scores > ood_score).float().mean()
+        if return_w:
+            return ood_score, p_value, w
         return ood_score, p_value
