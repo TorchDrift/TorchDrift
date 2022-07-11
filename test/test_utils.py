@@ -4,28 +4,42 @@ import torch
 import torch.utils.data
 
 
+class DummyIterableDataset(torch.utils.data.IterableDataset):
+    def __init__(self, *args) -> None:
+        super().__init__()
+        self.args = args
+
+    def __iter__(self):
+        return iter(*self.args)
+
+
 class TensorDataModule:
-    def __init__(self, *args):
-        self.ds = torch.utils.data.TensorDataset(*args)
+    def __init__(self, *args, ds_type="map"):
+        self.ds_type = ds_type
+
+        if ds_type == "map":
+            self.ds = torch.utils.data.TensorDataset(*args)
+        else:
+            self.ds = DummyIterableDataset(*args)
 
     def default_dataloader(self, batch_size=None, num_samples=None, shuffle=True):
-        dataset = self.ds
         if batch_size is None:
             batch_size = self.val_batch_size
         replacement = num_samples is not None
-        if shuffle:
+        if shuffle and self.ds_type == "map":
             sampler = torch.utils.data.RandomSampler(
-                dataset, replacement=replacement, num_samples=num_samples
+                self.ds, replacement=replacement, num_samples=num_samples
             )
         else:
             sampler = None
         return torch.utils.data.DataLoader(
-            dataset, batch_size=batch_size, sampler=sampler
+            self.ds, batch_size=batch_size, sampler=sampler
         )
 
 
-def test_fit():
-    dm_ref = TensorDataModule(torch.randn(500, 5))
+@pytest.mark.parametrize("ds_type", ("map", "iterable"))
+def test_fit(ds_type):
+    dm_ref = TensorDataModule(torch.randn(500, 5), ds_type=ds_type)
     d = torchdrift.detectors.KernelMMDDriftDetector()
     torchdrift.utils.fit(
         dm_ref.default_dataloader(batch_size=10),
