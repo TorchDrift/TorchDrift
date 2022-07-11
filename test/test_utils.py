@@ -36,16 +36,16 @@ class TensorDataModule:
             self.ds, batch_size=batch_size, sampler=sampler
         )
 
-
+@pytest.mark.parametrize("num_batches", (3, None))
 @pytest.mark.parametrize("ds_type", ("map", "iterable"))
-def test_fit(ds_type):
+def test_fit(ds_type, num_batches):
     dm_ref = TensorDataModule(torch.randn(500, 5), ds_type=ds_type)
     d = torchdrift.detectors.KernelMMDDriftDetector()
     torchdrift.utils.fit(
         dm_ref.default_dataloader(batch_size=10),
         torch.nn.Identity(),
         [torch.nn.Identity(), d],
-        num_batches=3,
+        num_batches=num_batches,
         device="cpu",
     )
 

@@ -43,9 +43,9 @@ def fit(
         total = None
 
     for i, b in enumerate(tqdm.tqdm(dl, total=total)):
-        if i >= num_batches:
+        if num_batches and i >= num_batches:
             break
-        
+
         if not isinstance(b, torch.Tensor):
             b = b[0]
         with torch.no_grad():
