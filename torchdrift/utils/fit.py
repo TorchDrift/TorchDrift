@@ -33,14 +33,24 @@ def fit(
 
     all_outputs = []
     # dl = torch.utils.data.DataLoader(ref_ds, batch_size=batch_size, shuffle=True)
-    nb = len(dl)
-    if num_batches is not None:
-        nb = min(nb, num_batches)
-    for i, b in tqdm.tqdm(zip(range(nb), dl), total=nb):
+
+    if hasattr(dl.dataset, "__len__"):
+        nb = len(dl)
+        if num_batches is not None:
+            nb = min(nb, num_batches)
+        total = nb
+    else:
+        total = None
+
+    for i, b in enumerate(tqdm.tqdm(dl, total=total)):
+        if num_batches is not None and i >= num_batches:
+            break
+
         if not isinstance(b, torch.Tensor):
             b = b[0]
         with torch.no_grad():
             all_outputs.append(feature_extractor(b.to(device)))
+
     all_outputs = torch.cat(all_outputs, dim=0)
 
     for m in reducers_detectors:
